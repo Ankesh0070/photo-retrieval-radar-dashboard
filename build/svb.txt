@@ -1,0 +1,68 @@
+
+/* ---------- Primary research: survey B ---------- */
+const SB=D.surveyB;
+const sbPct=n=>SB.length?+(100*n/SB.length).toFixed(0):0;
+const sbCnt=(f)=>{const o={};SB.forEach(r=>{const v=f(r);o[v]=(o[v]||0)+1});return o};
+const sbMulti=(k)=>{const o={};SB.forEach(r=>r[k].forEach(v=>o[v]=(o[v]||0)+1));return o};
+const FRUS={'Not frustrating':1,'Slightly frustrating':2,'Moderately frustrating':3,'Very frustrating':4,'Extremely frustrating':5};
+const FRUSO=Object.keys(FRUS);
+const CONFO=['Very confident','Somewhat confident','Neither confident nor unsure','Somewhat unsure'];
+function sbBar(id,counts,order,color){
+  chart(id,()=>{const ks=order||Object.keys(counts).sort((a,b)=>counts[b]-counts[a]);
+    return hbar(ks.map(k=>k+' ('+(counts[k]||0)+')'),[{data:ks.map(k=>sbPct(counts[k]||0)),backgroundColor:color||css('--accent')}],{plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:100,title:{display:true,text:'% of respondents'}},y:{grid:{display:false}}}})});
+}
+sbBar('sbFreq',sbCnt(r=>r.freq),['Rarely','Sometimes','Often','Very often'],css('--neu'));
+sbBar('sbItem',sbCnt(r=>r.item.length>30?'Other / free text':r.item));
+sbBar('sbConf',sbCnt(r=>r.conf),CONFO);
+sbBar('sbFail',sbCnt(r=>r.fail),null,css('--neg'));
+sbBar('sbNext',sbCnt(r=>r.next),null,css('--neu'));
+sbBar('sbFrus',sbCnt(r=>r.frus),FRUSO,css('--neg'));
+sbBar('sbPref',sbCnt(r=>r.pref),null,css('--pos'));
+sbBar('sbTrust',sbCnt(r=>r.trust),null,css('--pos'));
+sbBar('sbClues',sbMulti('clues'));
+sbBar('sbEnter',sbMulti('enter'));
+sbBar('sbHard',sbMulti('hard'),null,css('--neg'));
+sbBar('sbNarrow',sbMulti('narrow'));
+function sbText(){
+  const n=SB.length,f=sbCnt(r=>r.fail),nx=sbCnt(r=>r.next),pf=sbCnt(r=>r.pref),tr=sbCnt(r=>r.trust);
+  const top=(o)=>Object.entries(o).sort((a,b)=>b[1]-a[1]);
+  const mean=SB.reduce((a,r)=>a+FRUS[r.frus],0)/n;
+  const cl=sbMulti('clues'),en=sbMulti('enter'),hd=sbMulti('hard');
+  const memGap=(f["I don't remember enough details"]||0)+(f["I can't remember approximately when it was saved"]||0)+(f["I don't know what words to search"]||0);
+  const sysGap=(f["Search doesn't understand my description"]||0)+(f["Text inside the image isn't recognised"]||0)+(f["I get too many unrelated results"]||0)+(f["Similar items look almost identical"]||0);
+  const fb=['Add more details','Try different keywords','Search by person/place/date'].reduce((a,k)=>a+(nx[k]||0),0);
+  const scrollish=(nx['Browse the timeline']||0)+(nx['Check an album/folder']||0);
+  const unsure=SB.filter(r=>r.conf==='Somewhat unsure'||r.conf==='Neither confident nor unsure');
+  const sure=SB.filter(r=>r.conf==='Very confident'||r.conf==='Somewhat confident');
+  const m=a=>a.length?(a.reduce((s,r)=>s+FRUS[r.frus],0)/a.length).toFixed(1):'–';
+  $('sbN').textContent=n;
+  $('sbH').textContent=sbPct(memGap)+'% fail because they cannot recall or name enough; '+sbPct(scrollish)+'% fall back to browsing after a failed search';
+  const kp=[
+   ['Known photo, still not found',sbPct(n-(sbCnt(r=>r.known)['Never']||0))+'%','at least once (all respondents answered Rarely or more)'],
+   ['Fail from memory gap',sbPct(memGap)+'%','cannot recall enough, the time, or what to type'],
+   ['Fail from search limits',sbPct(sysGap)+'%','Search misreads description, text, or returns noise'],
+   ['Mean frustration',mean.toFixed(1)+' / 5',sbPct(SB.filter(r=>FRUS[r.frus]>=4).length)+'% very or extremely'],
+   ['Prefer being asked',sbPct(pf['It should ask me questions to clarify']||0)+'%','"It should ask me questions to clarify"'],
+   ['Never search, just scroll',sbPct(en["I usually don't search; I scroll"]||0)+'%','in the "what do you enter" question'],
+   ['Open to follow-up call',SB.filter(r=>r.follow).length+' of '+n,'interview pool; contact numbers stay in the source file'],
+   ['Remember a person first',sbPct(cl['Person/persons']||0)+'%','top clue, then '+(top(cl)[1]||['–'])[0].toLowerCase()]
+  ];
+  $('sbKpis').innerHTML=kp.map(k=>'<div class="card kpi c3"><div class="l">'+esc(k[0])+'</div><div class="v">'+esc(k[1])+'</div><div class="d">'+esc(k[2])+'</div></div>').join('');
+  const L=[];
+  L.push('Two different failures sit behind the same symptom. '+sbPct(memGap)+'% name a memory gap (cannot recall enough, the rough time, or the words to use). '+sbPct(sysGap)+'% say search itself misreads the description, ignores text in the image or returns too many look-alikes.');
+  L.push('The top clues remembered are '+top(cl).slice(0,3).map(x=>x[0].toLowerCase()+' ('+sbPct(x[1])+'%)').join(', ')+'. What people type is different: '+top(en).slice(0,3).map(x=>x[0].replace(/^A /,'').toLowerCase()+' ('+sbPct(x[1])+'%)').join(', ')+'. A combination of clues is typed by only '+sbPct(en['A combination of several clues']||0)+'%, although most people hold several clues at once.');
+  L.push('After a failed first search, '+sbPct(fb)+'% keep searching (more details, different keywords, person/place/date) and '+sbPct(scrollish)+'% switch to browsing. Top next step: '+top(nx)[0][0].toLowerCase()+' ('+sbPct(top(nx)[0][1])+'%).');
+  L.push(sbPct(pf['It should ask me questions to clarify']||0)+'% want the product to ask clarifying questions when it does not understand; related searches ('+sbPct(pf['It should show related searches']||0)+'%) and better search terms ('+sbPct(pf['It should suggest better search terms']||0)+'%) trail.');
+  L.push('Trust comes from seeing the match: person highlighted ('+sbPct(tr['The matching person is highlighted']||0)+'%), visual similarity ('+sbPct(tr['The result looks visually similar to what I remember']||0)+'%), text highlighted ('+sbPct(tr['The matching word/text is highlighted']||0)+'%). Only '+sbPct(tr["I don't need an explanation as long as the result is correct"]||0)+'% need no explanation.');
+  L.push('Less confident respondents (unsure or neutral, n='+unsure.length+') report mean frustration '+m(unsure)+' vs '+m(sure)+' for confident ones (n='+sure.length+'). Directional only.');
+  L.push('Text inside images is the hardest area: '+top(hd).filter(x=>!x[0].startsWith("I don't")).slice(0,3).map(x=>x[0].toLowerCase()+' ('+sbPct(x[1])+'%)').join(', ')+'.');
+  $('sbFind').innerHTML=L.map(l=>'<div class="rev"><p>'+esc(l)+'</p></div>').join('');
+  $('sbStories').innerHTML=SB.filter(r=>r.story&&!/^(n\/a|can.?t remember|i do not remember exactly now|i don.t exactly remember)/i.test(r.story)).map(r=>'<div class="rev"><div class="meta">'+r.id+' · '+esc(r.item.length>30?'Other':r.item)+' · '+esc(r.frus)+' · confidence: '+esc(r.conf.toLowerCase())+'</div><p>“'+esc(r.story)+'”</p><div><span class="pill">failed because: '+esc(r.fail)+'</span><span class="pill">then: '+esc(r.next.toLowerCase())+'</span></div></div>').join('');
+  let h='<tr><th class="r">Confidence ↓ / Frustration →</th>'+FRUSO.map(x=>'<th>'+x.replace(' frustrating','')+'</th>').join('')+'</tr>';
+  CONFO.forEach(c=>{const g=SB.filter(r=>r.conf===c);h+='<tr><td class="r">'+c+' (n='+g.length+')</td>'+FRUSO.map(x=>{const v=g.filter(r=>r.frus===x).length;return '<td class="h" style="background:color-mix(in srgb,var(--neg) '+Math.min(75,v*22)+'%,var(--panel))">'+(v||'·')+'</td>'}).join('')+'</tr>'});
+  $('sbHeat').innerHTML=h;
+  const fr=Object.keys(f);let h2='<tr><th class="r">Why the search failed</th>'+['Browse the timeline','Check an album/folder','Add more details','Try different keywords','Search by person/place/date'].map(x=>'<th>'+x.replace('Search by person/place/date','By person/place/date')+'</th>').join('')+'</tr>';
+  fr.forEach(k=>{h2+='<tr><td class="r">'+esc(k)+' ('+f[k]+')</td>'+['Browse the timeline','Check an album/folder','Add more details','Try different keywords','Search by person/place/date'].map(x=>{const v=SB.filter(r=>r.fail===k&&r.next===x).length;return '<td class="h" style="background:color-mix(in srgb,var(--accent) '+Math.min(75,v*30)+'%,var(--panel))">'+(v||'·')+'</td>'}).join('')+'</tr>'});
+  $('sbHeat2').innerHTML=h2;
+}
+sbText();

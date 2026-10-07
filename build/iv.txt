@@ -1,0 +1,46 @@
+
+/* ---------- Primary research: interviews ---------- */
+(function(){
+const IV=[
+ {id:'P1',src:'Transcript 1',lib:'~15,000 photos + 1,200 videos',span:'childhood and college photos',freq:'Rarely',
+  q:{freq:'I rarely use it to check for the photos.',first:'I just like scrolled down all the photos.',typed:'I never searched for the photo in Google one because like I\'m not aware of the like that option exists in Google Photos.',anchor:'I search for the year.',fallback:'I just like use like the like my finger as the muscle memory.',feel:'A bit sad.',unfound:'I felt like I\'m lazy enough to scroll down for that photos.',cost:'it took me like around like 20 minutes to search for that specific photo.'}},
+ {id:'P2',src:'Transcripts 2 and 3 (identical)',lib:'5,000+ photos, 10+ years',span:'10+ years',freq:'Weekly',
+  q:{freq:'Weekly once.',first:'Person, person. It\'s easy to find out with people option.',typed:'I will search with the date as well, uh, one year ago, two years ago, like that',anchor:'Yeah, date only.',fallback:'No, I didn\'t use it because scrolling is—it is eventual habit for, for me.',feel:'(not asked)',unfound:'No. Uh, no, I got all the photos, whatever I recovered.',cost:'If it is old, it will take time.'}},
+ {id:'P3',src:'Transcript 4',lib:'~2,000 photos, 5 years',span:'5 years',freq:'Checks by date',
+  q:{freq:'I check in for history. The date-wise...',first:'we have go through albums and many people\'s... one face for the people.',typed:'I didn\'t see for any searches option.',anchor:'The date-wise...',fallback:'Yeah, scroll.',feel:'(not asked)',unfound:'(not asked)',cost:'(not stated)'}},
+ {id:'P4',src:'Transcript 5',lib:'~5,000 photos, since 2021',span:'since 2021',freq:'Event-driven',
+  q:{freq:'whenever I miss my friends or whenever my friend birthday is coming, I\'ll search their photos',first:'Like sometimes I\'ll find like some uh they\'ll show some people\'s picture, right?',typed:'I\'ll just type uh month maybe. Month or the year.',anchor:'I\'ll just uh remember the month or year',fallback:'I exactly don\'t remember the months. Like maybe it\'s June or July, I\'ll first search June, then if it doesn\'t comes, I\'ll search in July',feel:'If it\'s very important, definitely I\'ll get annoyed.',unfound:'Uh, no. Whatever I have in my Google Photos uh that are very important to me',cost:'I prefer searching only. It is easy than scrolling for long years'}}
+];
+const TH=[
+ ['Anchors on time first (year, month or date)',['●','●','●','●']],
+ ['Person or face grouping is a main route',['–','●','◐','●']],
+ ['Did not know text search exists, never used it',['●','–','●','–']],
+ ['Scrolls the timeline as default or fallback',['●','●','●','–']],
+ ['Cannot pin the exact month, so retries guesses',['–','–','–','●']],
+ ['Uses albums or folders or categories as manual shortcuts',['●','–','●','●']],
+ ['Occasion or event gives the photo its meaning',['●','●','–','◐']],
+ ['Feels a cost: time, sadness or annoyance',['●','◐','–','●']],
+ ['Currently has a photo they cannot find',['●','–','–','–']]
+];
+const cnt=r=>r[1].filter(x=>x==='●').length;
+$('ivKpis').innerHTML=[
+ ['Distinct interviews',IV.length+' of 6','5 transcripts received; one is a duplicate'],
+ ['Anchor on time first',cnt(TH[0])+' of 4','year, month or date'],
+ ['Unaware of text search',cnt(TH[2])+' of 4','scroll or browse albums instead'],
+ ['Scroll as default or fallback',cnt(TH[3])+' of 4','including one for whom it is habit'],
+ ['Guess-and-retry on fuzzy time',cnt(TH[4])+' of 4','searched June, then July'],
+ ['Longest hunt stated','~20 min','scrolling to find a childhood photo (P1)']
+].map(k=>'<div class="card kpi c4"><div class="l">'+esc(k[0])+'</div><div class="v">'+esc(k[1])+'</div><div class="d">'+esc(k[2])+'</div></div>').join('');
+$('ivMat').innerHTML='<tr><th class="r">Theme</th>'+IV.map(p=>'<th>'+p.id+'</th>').join('')+'<th>Total</th></tr>'+TH.map(r=>'<tr><td class="r">'+esc(r[0])+'</td>'+r[1].map(x=>'<td class="h" style="background:color-mix(in srgb,var(--accent) '+(x==='●'?60:x==='◐'?25:0)+'%,var(--panel))">'+x+'</td>').join('')+'<td class="h">'+cnt(r)+'/4</td></tr>').join('');
+const QL=[['freq','How often'],['first','First move or first clue'],['typed','What they type or do'],['anchor','Time anchor'],['fallback','When it does not work'],['cost','Cost of finding it'],['feel','How it feels'],['unfound','A photo still not found']];
+$('ivJour').innerHTML='<tr><th>Question</th>'+IV.map(p=>'<th>'+p.id+' · '+esc(p.lib)+'</th>').join('')+'</tr>'+QL.map(([k,l])=>'<tr><td><b>'+l+'</b></td>'+IV.map(p=>'<td>'+(p.q[k].startsWith('(')?'<span class="sub">'+esc(p.q[k])+'</span>':'“'+esc(p.q[k])+'”')+'</td>').join('')+'</tr>').join('');
+const F=[
+ 'Time is the clue every interviewee starts from. All four go to a year, month or date first. Person comes second for those who use it (P2, P4) and the people or face grouping is the route for P3.',
+ 'Two of four never use text search because they did not know it exists (P1, P3). Both scroll or browse albums, and P1 spent about 20 minutes finding a childhood photo. The failure here happens before any query: the capability is not discovered. Survey A shows the same signal in '+svPct(SVALL.filter(r=>shortScroll(r.scroll)==='Did not know search can do this').length*SVALL.length/Math.max(1,SVALL.length))+'% of respondents who scroll because they did not realise search could find specific photos.',
+ 'Even when search is known and works, rough time creates guess-and-retry. P4 does not remember whether it was June or July, so searches June first and July if that fails. Search expects an exact month or year; memory offers a range.',
+ 'Scrolling can be a habit and not only a workaround. P2 searches well by person and date but says scrolling is an "eventual habit".',
+ 'Retrieval works when the user has a precise anchor and a small, recent library. P2 and P4 each report no photo they cannot find. The pain sits with weak anchors, old content and large libraries, which fits what the reviews and surveys show.',
+ 'Cost is emotional and depends on importance: "A bit sad" (P1), "annoyed" only if the photo is important (P4), "lazy enough to scroll" (P1) for a photo that stays unfound.'
+];
+$('ivFind').innerHTML=F.map(l=>'<div class="rev"><p>'+esc(l)+'</p></div>').join('');
+})();
